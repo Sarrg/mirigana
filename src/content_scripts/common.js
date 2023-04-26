@@ -97,6 +97,7 @@ const smash = (tkn) => {
       s: sg.s,
       r: sg.r.join(''),
       p: sg.p,
+      c: tkn.s+'='+tkn.r, // original context
     }));
 };
 
@@ -143,24 +144,24 @@ rt.furigana {
 }`);
 };
 
-const renderKanji = (furigana, kanji) => {
+const renderKanji = (kana, kanji, context) => {
   const el = document.createElement('ruby');
   const kanaStart = getKanaTag('(');
   const kanaEnd = getKanaTag(')');
 
-  el.innerHTML = `${kanji}<rt class="furigana">${kanaStart}${furigana}${kanaEnd}</rt>`;
-  
+  el.innerHTML = `${kanji}<rt class="furigana">${kanaStart}${kana}${kanaEnd}</rt>`;
+  el.setAttribute('ctx', context)
 
   el.addEventListener(
     'pointerdown',
     (e)=> {
       if (document.getSelection().isCollapsed) {
-        kanji = e.target.childNodes[0].textContent
-        if(FilterStorage.filter_exists(kanji)) {
-          FilterStorage.delete(kanji)
+        const ctx = e.target.getAttribute('ctx')
+        if(FilterStorage.filter_exists(ctx)) {
+          FilterStorage.delete(ctx);
         }
         else {
-          FilterStorage.add(kanji)
+          FilterStorage.add(ctx);
         }
       }
     },
@@ -188,6 +189,7 @@ const renderRuby = (container, token) => {
     blocks.push({
       s: r.s,
       r: r.r,
+      c: r.c,
     });
     pos += r.s.length;
   });
@@ -203,9 +205,9 @@ const renderRuby = (container, token) => {
   blocks.forEach((b) => {
     if (b.r) {
       // contains kanji
-      const rb = renderKanji(b.r, b.s);
+      const rb = renderKanji(b.r, b.s, b.c);
       container.appendChild(rb);
-      const filter_furigana =FilterStorage.filter_exists(b.s);
+      const filter_furigana = FilterStorage.filter_exists(b.c);
       if (filter_furigana) {
         rb.querySelector('.furigana').style.display = 'none';
       }
@@ -219,11 +221,9 @@ const renderRuby = (container, token) => {
 
 if (isChrome()) {
   FilterStorage.on('updated', (event, filter) => {
-    let selector_query = '.furigana';
+    const selector_query = `ruby[ctx="${filter}"] .furigana`;
     document.querySelectorAll(selector_query).forEach((rb) => {
-      if (rb.parentNode.childNodes[0].textContent === filter) {
-        rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
-      }
+      rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
     });
   });
 }
