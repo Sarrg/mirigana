@@ -8,6 +8,7 @@ FURIGANA_COLOR_KEY
 FURIGANA_COLOR_DEFAULT
 FURIGANA_SELECTABLE_KEY
 FURIGANA_SELECTABLE_DEFAULT
+FILTER_LIST_KEY
 CURRENT_PARSE_ENGINE_KEY
 CURRENT_PARSE_ENGINE_DEFAULT
 
@@ -112,6 +113,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       pct: nullish(result[FURIGANA_SIZE_PERCENTAGE_KEY], FURIGANA_SIZE_PERCENTAGE_DEFAULT),
       color: nullish(result[FURIGANA_COLOR_KEY], FURIGANA_COLOR_DEFAULT),
       furigana_selectable: nullish(result[FURIGANA_SELECTABLE_KEY], FURIGANA_SELECTABLE_DEFAULT),
+    });
+  });
+
+  // indicate async callback
+  return true;
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { event } = request;
+  if (event !== MIRI_EVENTS.LOAD_FILTERS) {
+    // reject other events
+    return false;
+  }
+
+  chrome.storage.sync.get((result = {}) => {
+    sendResponse({
+      filters: result[FILTER_LIST_KEY],
     });
   });
 

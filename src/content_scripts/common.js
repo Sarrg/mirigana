@@ -7,13 +7,12 @@ SettingStorage
 */
 
 window.__mirigana__ = (window.__mirigana__ || {}); // eslint-disable-line no-underscore-dangle
-window.__mirigana__.hiddenRubyContainers = []; // eslint-disable-line no-underscore-dangle
 
 const isFirefox = () => (typeof InstallTrigger !== 'undefined');
 const isChrome = () => (!!window.chrome && (!!window.chrome.webstore || !!window.chrome.runtime));
 
 const getKanaTag = (tag) => `<img alt="${tag}" src='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"></svg>' />`;
-const renderKana = (hirakana) => document.createTextNode(hirakana);
+const renderKana = (furigana) => document.createTextNode(furigana);
 
 const kanaConvert = (kana, isHiraToKata) => {
   if (isHiraToKata && !/[ぁ-ん]/.test(kana)) {
@@ -144,18 +143,33 @@ rt.furigana {
 }`);
 };
 
-const renderKanji = (hirakana, kanji) => {
+const renderKanji = (furigana, kanji) => {
   const el = document.createElement('ruby');
   const kanaStart = getKanaTag('(');
   const kanaEnd = getKanaTag(')');
 
-  el.innerHTML = `${kanji}<rt class="furigana">${kanaStart}${hirakana}${kanaEnd}</rt>`;
+  el.innerHTML = `${kanji}<rt class="furigana">${kanaStart}${furigana}${kanaEnd}</rt>`;
+  
+
+  el.addEventListener(
+    'pointerdown',
+    (e)=> {
+      if (document.getSelection().isCollapsed) {
+        kanji = e.target.childNodes[0].textContent
+        if(FilterStorage.filter_exists(kanji)) {
+          FilterStorage.delete(kanji)
+        }
+        else {
+          FilterStorage.add(kanji)
+        }
+      }
+    },
+    false
+  );
   return el;
 };
 
 const renderRuby = (container, token) => {
-
-
   const text = container.innerText;
 
   // smash the token to the kanji-only token
@@ -189,7 +203,13 @@ const renderRuby = (container, token) => {
   blocks.forEach((b) => {
     if (b.r) {
       // contains kanji
-      container.appendChild(renderKanji(b.r, b.s));
+      const rb = renderKanji(b.r, b.s);
+      container.appendChild(rb);
+      const filter_furigana =FilterStorage.filter_exists(b.s);
+      if (filter_furigana) {
+        rb.querySelector('.furigana').style.display = 'none';
+      }
+      
     } else {
       // all kana or unparsed kanji
       container.appendChild(renderKana(b.s));
@@ -198,18 +218,13 @@ const renderRuby = (container, token) => {
 };
 
 if (isChrome()) {
-  // show all ruby be hidden
-  document.addEventListener('selectionchange', () => {
-    if (document.getSelection().isCollapsed) {
-      // text selection has been cleared
-      window.__mirigana__.hiddenRubyContainers.forEach((c) => {
-        c.querySelectorAll('.furigana').forEach((rb) => {
-          rb.style.visibility = 'visible';
-        });
-      });
-
-      window.__mirigana__.hiddenRubyContainers = [];
-    }
+  FilterStorage.on('updated', (event, filter) => {
+    let selector_query = '.furigana';
+    document.querySelectorAll(selector_query).forEach((rb) => {
+      if (rb.parentNode.childNodes[0].textContent === filter) {
+        rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
+      }
+    });
   });
 }
 

@@ -44,7 +44,7 @@ class Miri {
 
     const now = new Date().getTime();
     const elapsed = now - this.lastRequestTokens;
-    const shouldRequest = this.tweetPool.length
+    const shouldRequest = FilterStorage.loaded && (this.tweetPool.length > 0)
       && (elapsed > this.throttleTimeout);
 
     debug('now:', now, 'last:', this.lastRequestTokens, 'elapsed:', elapsed, 'shouldRequest:', shouldRequest);
