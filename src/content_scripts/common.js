@@ -137,10 +137,10 @@ rt.furigana {
 }`);
 };
 
-const updateNoSelectStyle = (id, kanaless) => {
+const updateSelectStyle = (id, furigana_selectable) => {
   updateStyleNode(id, `
 rt.furigana {
-  user-select: ${kanaless ? 'none' : 'text'};
+  user-select: ${furigana_selectable ? 'text' : 'none'};
 }`);
 };
 
@@ -154,48 +154,7 @@ const renderKanji = (hirakana, kanji) => {
 };
 
 const renderRuby = (container, token) => {
-  // hidden ruby on contextmenu
-  if (isChrome()) {
-    const tweetContainer = container.parentElement;
 
-    // method1:
-    // hide furigana on context menu open
-    // tweetContainer.addEventListener('contextmenu', () => {
-    //   if (!SettingStorage.get('kanaless')) {
-    //     return;
-    //   }
-
-    //   container.querySelectorAll('.furigana').forEach((rb) => {
-    //     rb.style.visibility = 'hidden';
-    //   });
-    //   window.__mirigana__.hiddenRubyContainers.push(tweetContainer);
-    // });
-
-
-    // method2:
-    // hide furigana on text being selected
-    document.addEventListener('selectionchange', () => {
-      if (!SettingStorage.get('kanaless')) {
-        return;
-      }
-
-      const selection = document.getSelection();
-      if (!selection.isCollapsed) {
-        // not selected any text
-        return;
-      }
-
-      if (!tweetContainer.contains(selection.anchorNode)) {
-        // the selection is not belongs to the container
-        return;
-      }
-
-      container.querySelectorAll('.furigana').forEach((rb) => {
-        rb.style.visibility = 'hidden';
-      });
-      window.__mirigana__.hiddenRubyContainers.push(tweetContainer);
-    });
-  }
 
   const text = container.innerText;
 

@@ -34,7 +34,7 @@ const SettingStorage = {
       (response) => {
         debug('responsed: LOAD_SETTINGS');
         this.loaded = true;
-        // const { pct, kanaless, color } = response;
+        // const { pct, furigana_selectable, color } = response;
         this.set(response);
 
         this.eventHandlers.loaded

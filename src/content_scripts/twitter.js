@@ -10,7 +10,7 @@ renderRuby
 setRubyVisibility
 updateRubySizeStyle
 updateRubyColorStyle
-updateNoSelectStyle
+updateSelectStyle
 */
 
 const onTokenReady = (c, t) => {
@@ -21,13 +21,13 @@ SettingStorage.on('updated', (settings) => {
   const {
     enabled,
     pct,
-    kanaless,
+    furigana_selectable,
     color
   } = settings;
   setRubyVisibility('miri-ruby-visible', enabled);
   updateRubySizeStyle('miri-ruby', pct);
   updateRubyColorStyle('miri-ruby-color', color);
-  updateNoSelectStyle('miri-no-select', kanaless);
+  updateSelectStyle('miri-furigana-select', furigana_selectable);
 });
 
 const miri = new Miri({
@@ -225,14 +225,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (event === MIRI_EVENTS.TOGGLE_EXTENSION) {
     setRubyVisibility('miri-ruby-visible', value);
     SettingStorage.set({ enabled: value });
-  } else if (event === MIRI_EVENTS.UPDATE_HIRAGANA_SIZE) {
+  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SIZE) {
     updateRubySizeStyle('miri-ruby', value);
     SettingStorage.set({ pct: value });
-  } else if (event === MIRI_EVENTS.UPDATE_HIRAGANA_COLOR) {
+  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_COLOR) {
     updateRubyColorStyle('miri-ruby-color', value);
     SettingStorage.set({ color: value });
-  } else if (event === MIRI_EVENTS.UPDATE_HIRAGANA_NO_SELECT) {
-    updateNoSelectStyle('miri-no-select', value);
-    SettingStorage.set({ kanaless: value });
+  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SELECTABLE) {
+    updateSelectStyle('miri-furigana-select', value);
+    SettingStorage.set({ furigana_selectable: value });
   }
 });

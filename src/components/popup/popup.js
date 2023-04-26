@@ -1,14 +1,14 @@
 /* global
 EXTENSION_ENABLED_KEY
 EXTENSION_ENABLED_DEFAULT
-HIRAGANA_SIZE_PERCENTAGE_KEY
-HIRAGANA_SIZE_PERCENTAGE_DEFAULT
-HIRAGANA_COLOR_KEY
-HIRAGANA_COLOR_DEFAULT
-HIRAGANA_NO_SELECTION_KEY
-HIRAGANA_NO_SELECTION_DEFAULT
+FURIGANA_SIZE_PERCENTAGE_KEY
+FURIGANA_SIZE_PERCENTAGE_DEFAULT
+FURIGANA_COLOR_KEY
+FURIGANA_COLOR_DEFAULT
+FURIGANA_SELECTABLE_KEY
+FURIGANA_SELECTABLE_DEFAULT
 MIRI_EVENTS
-HIRAGANA_COLORS
+FURIGANA_COLORS
 */
 
 function fillText(id, textOrKey, useKey) {
@@ -55,7 +55,7 @@ function prepareToggleButton(initValue) {
 
 function prepareColorSwitcher(initValue) {
   const switcher = document.querySelector('.color-switcher');
-  HIRAGANA_COLORS.forEach((c) => {
+  FURIGANA_COLORS.forEach((c) => {
     const tile = document.createElement('div');
     tile.className = 'block';
     tile.style.backgroundColor = c.value;
@@ -84,11 +84,11 @@ function prepareColorSwitcher(initValue) {
 
     // update to storage
     const saveData = {
-      [HIRAGANA_COLOR_KEY]: color,
+      [FURIGANA_COLOR_KEY]: color,
     };
     chrome.storage.sync.set(saveData);
 
-    broadcast(MIRI_EVENTS.UPDATE_HIRAGANA_COLOR, color);
+    broadcast(MIRI_EVENTS.UPDATE_FURIGANA_COLOR, color);
   });
 }
 
@@ -102,11 +102,11 @@ function prepareKanaSizeRange(initValue) {
 
     // update to storage
     const saveData = {
-      [HIRAGANA_SIZE_PERCENTAGE_KEY]: pct,
+      [FURIGANA_SIZE_PERCENTAGE_KEY]: pct,
     };
     chrome.storage.sync.set(saveData);
 
-    broadcast(MIRI_EVENTS.UPDATE_HIRAGANA_SIZE, pct);
+    broadcast(MIRI_EVENTS.UPDATE_FURIGANA_SIZE, pct);
   });
 }
 
@@ -115,14 +115,14 @@ function prepareKanaSelection(initValue) {
   selection.checked = initValue;
 
   selection.addEventListener('change', (e) => {
-    const kanaless = e.target.checked;
+    const furigana_selectable = e.target.checked;
     // update to storage
     const saveData = {
-      [HIRAGANA_NO_SELECTION_KEY]: kanaless,
+      [FURIGANA_SELECTABLE_KEY]: furigana_selectable,
     };
     chrome.storage.sync.set(saveData);
 
-    broadcast(MIRI_EVENTS.UPDATE_HIRAGANA_NO_SELECT, kanaless);
+    broadcast(MIRI_EVENTS.UPDATE_FURIGANA_SELECTABLE, furigana_selectable);
   });
 }
 
@@ -136,21 +136,21 @@ function nullish(value, defaultValue) {
 // load from storage
 chrome.storage.sync.get([
   EXTENSION_ENABLED_KEY,
-  HIRAGANA_SIZE_PERCENTAGE_KEY,
-  HIRAGANA_NO_SELECTION_KEY,
-  HIRAGANA_COLOR_KEY,
+  FURIGANA_SIZE_PERCENTAGE_KEY,
+  FURIGANA_SELECTABLE_KEY,
+  FURIGANA_COLOR_KEY,
 ], (result = {}) => {
   const disabled = nullish(result[EXTENSION_ENABLED_KEY], EXTENSION_ENABLED_DEFAULT);
   prepareToggleButton(disabled);
 
-  const pct = nullish(result[HIRAGANA_SIZE_PERCENTAGE_KEY], HIRAGANA_SIZE_PERCENTAGE_DEFAULT);
+  const pct = nullish(result[FURIGANA_SIZE_PERCENTAGE_KEY], FURIGANA_SIZE_PERCENTAGE_DEFAULT);
   prepareKanaSizeRange(pct);
 
-  const color = nullish(result[HIRAGANA_COLOR_KEY], HIRAGANA_COLOR_DEFAULT);
+  const color = nullish(result[FURIGANA_COLOR_KEY], FURIGANA_COLOR_DEFAULT);
   prepareColorSwitcher(color);
 
-  const kanaless = nullish(result[HIRAGANA_NO_SELECTION_KEY], HIRAGANA_NO_SELECTION_DEFAULT);
-  prepareKanaSelection(kanaless);
+  const furigana_selectable = nullish(result[FURIGANA_SELECTABLE_KEY], FURIGANA_SELECTABLE_DEFAULT);
+  prepareKanaSelection(furigana_selectable);
 
   fillText('.kana-size .literal', 'ui_furigana_size', true);
   fillText('.kana-size .value', pct);
