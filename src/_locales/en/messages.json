@@ -9,6 +9,16 @@
     "description": ""
   },
 
+  "ui_btn_import": {
+    "message": "Import Settings",
+    "description": ""
+  },
+
+  "ui_btn_export": {
+    "message": "Export Settings",
+    "description": ""
+  },
+
   "ui_furigana_size": {
     "message": "Font Size:",
     "description": ""

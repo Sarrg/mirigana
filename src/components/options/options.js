@@ -14,14 +14,59 @@ function localizeElement(ele) {
   ele.innerText = chrome.i18n.getMessage(key);
 }
 
+async function _onSettingsImportFileChanged(e) {
+  //const date = new Date(Date.now)
+  const files = e.target.files;
+
+  if (files.length === 0) {
+    return;
+  }
+  
+  const file = files[0];
+  e.target.value = null;
+  
+  const fileLoad = new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+
+  const fileContent = await fileLoad;
+  const data = JSON.parse(fileContent);
+  // TODO: JSON checks
+
+  chrome.storage.sync.set(data);
+}
+
+
+async function _onSettingsExportClick() {
+  //const date = new Date(Date.now)
+  const data = await chrome.storage.sync.get();
+  const filename = `mirigana-settings.json`;
+  const blob = new Blob([JSON.stringify(data, null, 4)], {type: 'application/json'});
+  const blobURL = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobURL;
+  link.download = filename;
+  link.rel = 'noopener';
+  link.target = '_blank';
+  link.dispatchEvent(new MouseEvent('click'));
+}
+
 const mainContainer = document.querySelector('.main-container');
 const optionContainer = mainContainer.querySelector('.option');
 const optionLabel = mainContainer.querySelector('.label');
 const optionNotice = mainContainer.querySelector('.notice');
 const optionApplyBtn = mainContainer.querySelector('.apply');
+const importSettingsBtn = mainContainer.querySelector('#settings-import');
+const importSettingsFile = mainContainer.querySelector('#settings-import-file');
+const exportSettingsBtn = mainContainer.querySelector('#settings-export');
 localizeElement(optionLabel);
 localizeElement(optionNotice);
 localizeElement(optionApplyBtn);
+localizeElement(importSettingsBtn);
+localizeElement(exportSettingsBtn);
 
 optionApplyBtn.addEventListener('click', () => {
   chrome.storage.local.set({
@@ -33,6 +78,10 @@ optionApplyBtn.addEventListener('click', () => {
     window.close();
   });
 });
+
+importSettingsBtn.addEventListener('click', () => {document.querySelector('#settings-import-file').click();});
+importSettingsFile.addEventListener('change', _onSettingsImportFileChanged)
+exportSettingsBtn.addEventListener('click', _onSettingsExportClick);
 
 function createDOM(type, options, ...children) {
   const container = document.createElement(type);
