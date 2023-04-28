@@ -1,5 +1,6 @@
 /* global
 kuromoji
+elementpicker
 EXTENSION_ENABLED_KEY
 EXTENSION_ENABLED_DEFAULT
 FURIGANA_SIZE_PERCENTAGE_KEY
@@ -152,10 +153,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// disable page action icon for the site other than twitter.com
+// disable page action icon for unsupported sites
+const manifest = chrome.runtime.getManifest();
+const valid_url_regex = manifest['content_scripts'][0]['matches'].join('|');
+
 chrome.tabs.onActivated.addListener((activeInfo) => {
   chrome.tabs.get(activeInfo.tabId).then((tab) => {
-    if (tab.url.match(/^https:\/\/(tweetdeck.)?twitter\.com\//)) {
+    if (tab.url.match(valid_url_regex)) {
       chrome.action.enable();
     } else {
       chrome.action.disable();

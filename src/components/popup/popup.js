@@ -17,18 +17,22 @@ function fillText(id, textOrKey, useKey) {
     ? chrome.i18n.getMessage(textOrKey)
     : textOrKey;
 }
+const manifest = chrome.runtime.getManifest();
+const matches = manifest['content_scripts'][0]['matches'];
 
 const broadcast = (event, value) => {
-  chrome.tabs.query({ url: 'https://*.twitter.com/*' }, (tabs) => {
-    if (!tabs.length) {
-      return;
-    }
+  matches.forEach((match) => {
+    chrome.tabs.query({url: match}, (tabs) => {
+      if (!tabs.length) {
+        return;
+      }
 
-    const msg = {
-      event,
-      value,
-    };
-    tabs.forEach((t) => chrome.tabs.sendMessage(t.id, msg));
+      const msg = {
+        event,
+        value,
+      };
+      tabs.forEach((t) => chrome.tabs.sendMessage(t.id, msg));
+    })
   });
 };
 
@@ -157,6 +161,12 @@ chrome.storage.sync.get([
   fillText('.kana-selection .literal', 'ui_skip_furigana_selection', true);
   fillText('.footer .feedback', 'ui_feedback', true);
   fillText('.footer .version', `Ver ${chrome.runtime.getManifest().version}`);
+});
+
+document.querySelector('#element-picker').addEventListener('click', () => {
+  broadcast(MIRI_EVENTS.ACTIVATE_ELEMENT_PICKER);
+  window.close();
+  return true;
 });
 
 // bind a tag
