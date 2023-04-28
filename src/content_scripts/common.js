@@ -201,21 +201,42 @@ const renderRuby = (container, token) => {
   }
 
   // clear the original text
-  container.innerText = '';
+  //container.innerText = '';
+  const textNodes = []
+  const getTextNodes = function getTextNodes(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      textNodes.push(node);
+      return;
+    }
+    node.childNodes.forEach((cnode) => getTextNodes(cnode));
+  }
+  
+  getTextNodes(container);
+  var textNodeText = '';
+  var textNode = null;
+
   blocks.forEach((b) => {
+    if (textNodeText === '') {
+      textNode = textNodes.shift();
+      textNodeText = textNode.textContent;
+      const textSpan = document.createElement("span");
+      textNode.parentNode.replaceChild(textSpan, textNode);
+      textNode = textSpan;
+    }
+
     if (b.r) {
       // contains kanji
       const rb = renderKanji(b.r, b.s, b.c);
-      container.appendChild(rb);
+      textNode.appendChild(rb);
       const filter_furigana = FilterStorage.filter_exists(b.c);
       if (filter_furigana) {
         rb.querySelector('.furigana').style.display = 'none';
       }
-      
     } else {
-      // all kana or unparsed kanji
-      container.appendChild(renderKana(b.s));
+      //all kana or unparsed kanji
+      textNode.appendChild(renderKana(b.s));
     }
+    textNodeText = textNodeText.substring(b.s.length);
   });
 };
 

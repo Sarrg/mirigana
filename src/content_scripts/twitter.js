@@ -215,10 +215,89 @@ const registerDeckMutationHook = () => {
   observer.observe(mainContainer, { childList: true, subtree: true });
 };
 
+
+test_mainComponents = {
+  'ja.wikipedia.org': 'body > div.mw-page-container',
+  'www.youtube.com': 'body > ytd-app',
+}
+
+test_selectorQueries = {
+  'ja.wikipedia.org': 'P',
+  'www.youtube.com': '.style-scope ytd-expander',
+}
+
+const registerGeneralMutationHook = () => {
+  const MAIN_CONTAINER_SELECTOR = test_mainComponents[window.location.hostname];
+  if (MAIN_CONTAINER_SELECTOR === undefined) {
+    return;
+  }
+
+  const mainContainer = document.querySelector(MAIN_CONTAINER_SELECTOR);
+  
+  if (!mainContainer) {
+    log('not found main container element.');
+    return;
+  }
+
+  const ELEMENT_SELECTOR = test_selectorQueries[window.location.hostname];
+
+  const findElements = (mutationsList) => {
+    const elementBag = [];
+    mutationsList.forEach((mutation) => {
+      const { addedNodes } = mutation;
+
+      if (!addedNodes.length) {
+        // ignore the non-add events
+        return;
+      }
+
+      addedNodes.forEach((node) => {
+        if (node.nodeType !== 1) {
+          // node type should be element(1)
+          return;
+        }
+
+        const elements = node.querySelectorAll(ELEMENT_SELECTOR);
+        
+        elements.forEach((element) => {
+          const textContent = element.textContent;
+          if (!textContent.trim().length) {
+            // text content should not empty
+            return;
+          }
+
+
+          //const textSpan = document.createElement("span");
+          //element.parentNode.replaceChild(textSpan, element);
+
+          elementBag.push({
+            c: element,
+            tc: textContent,
+          });
+        });
+      });
+    });
+
+    if (elementBag.length) {
+      miri.addTweets(elementBag); // TODO: might need be changed to generalized version
+    }
+  };
+
+  const observer = new MutationObserver(findElements);
+
+  observer.observe(mainContainer, { childList: true, subtree: true });
+  findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer
+};
+
+
+
 // main
 log('initialized.');
-registerMutationHook();
-registerDeckMutationHook();
+
+var hooked = false;
+hooked = registerMutationHook();
+hooked = hooked || registerDeckMutationHook();
+hooked = hooked || registerGeneralMutationHook();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { event, value } = request;
