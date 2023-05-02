@@ -171,37 +171,14 @@ const renderKanji = (kana, kanji, context) => {
 };
 
 const renderRuby = (container, token) => {
-  const text = container.innerText;
+  if (token.length === 0) return;
+
+  const text = container.textContent;
 
   // smash the token to the kanji-only token
   const smashed = token.reduce((ret, tkn) => ret.concat(smash(tkn)), []);
 
-  // create blocks from smashed token
-  let pos = 0;
-  const blocks = [];
-  smashed.forEach((r) => {
-    if (r.p !== pos) {
-      blocks.push({
-        s: text.substr(pos, r.p - pos),
-      });
-      pos = r.p;
-    }
-    blocks.push({
-      s: r.s,
-      r: r.r,
-      c: r.c,
-    });
-    pos += r.s.length;
-  });
-
-  if (text.length > pos) {
-    blocks.push({
-      s: text.substr(pos),
-    });
-  }
-
-  // clear the original text
-  //container.innerText = '';
+  // get all text nodes
   const textNodes = []
   const getTextNodes = function getTextNodes(node) {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -212,32 +189,76 @@ const renderRuby = (container, token) => {
   }
   
   getTextNodes(container);
-  var textNodeText = '';
-  var textNode = null;
 
-  blocks.forEach((b) => {
-    if (textNodeText === '') {
-      textNode = textNodes.shift();
-      textNodeText = textNode.textContent;
-      const textSpan = document.createElement("span");
-      textNode.parentNode.replaceChild(textSpan, textNode);
-      textNode = textSpan;
-    }
-
-    if (b.r) {
-      // contains kanji
-      const rb = renderKanji(b.r, b.s, b.c);
-      textNode.appendChild(rb);
-      const filter_furigana = FilterStorage.filter_exists(b.c);
-      if (filter_furigana) {
-        rb.querySelector('.furigana').style.display = 'none';
+  // create blocks from smashed token per text node
+  let pos = 0;
+  let tnPos = 0;
+  let tnIdx = 0;
+  const nodeBlocks = {};
+  let blocks = [];
+  smashed.forEach((r) => {
+    while (r.p !== pos) {
+      const tnText = textNodes[tnIdx].textContent
+      const tnSub = tnText.substr(pos - tnPos)
+      if (tnSub.includes(r.s)) {
+        blocks.push({
+          s: text.substr(pos, r.p - pos),
+        });
+        pos = r.p;
       }
-    } else {
-      //all kana or unparsed kanji
-      textNode.appendChild(renderKana(b.s));
+      else {
+        if (blocks.length) {
+          nodeBlocks[tnIdx] = blocks;
+        }
+        pos = tnPos + tnText.length;
+        blocks = [];
+        tnIdx++;
+        tnPos = pos;
+      }
     }
-    textNodeText = textNodeText.substring(b.s.length);
+    blocks.push({
+      s: r.s,
+      r: r.r,
+      c: r.c,
+    });
+    pos += r.s.length;
   });
+
+  if (blocks.length) {
+    const tnText = textNodes[tnIdx].textContent
+    const tnEnd = tnPos + tnText.length
+    if (tnEnd > pos) {
+      blocks.push({
+        s: tnText.substr(pos - tnPos),
+      });
+    }
+    nodeBlocks[tnIdx] = blocks;
+  }
+  
+  // replace the original text nodes
+  for (const key in nodeBlocks){
+    const textNode = textNodes[key];
+    let textNodeText = textNode.textContent;
+    const blocks = nodeBlocks[key];
+    const textSpan = document.createElement("span");
+
+    blocks.forEach((b) => {
+      if (b.r) {
+        // contains kanji
+        const rb = renderKanji(b.r, b.s, b.c);
+        textSpan.appendChild(rb);
+        const filter_furigana = FilterStorage.filter_exists(b.c);
+        if (filter_furigana) {
+          rb.querySelector('.furigana').style.display = 'none';
+        }
+      } else {
+        //all kana or unparsed kanji
+        textSpan.appendChild(renderKana(b.s));
+      }
+      textNodeText = textNodeText.substring(b.s.length);
+    });
+    textNode.parentNode.replaceChild(textSpan, textNode);
+  }
 };
 
 if (isChrome()) {
@@ -247,11 +268,4 @@ if (isChrome()) {
       rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
     });
   });
-}
-
-if (isFirefox()) {
-  updateStyleNode('miri-ruby-align', `
-ruby {
-  ruby-align: space-between;
-}`);
 }

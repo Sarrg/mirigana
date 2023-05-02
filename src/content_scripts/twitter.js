@@ -223,7 +223,7 @@ test_mainComponents = {
 
 test_selectorQueries = {
   'ja.wikipedia.org': 'P',
-  'www.youtube.com': '.style-scope ytd-expander',
+  'www.youtube.com': '#content.style-scope.ytd-expander',
 }
 
 const registerGeneralMutationHook = () => {
@@ -260,26 +260,34 @@ const registerGeneralMutationHook = () => {
         const elements = node.querySelectorAll(ELEMENT_SELECTOR);
         
         elements.forEach((element) => {
-          const textContent = element.textContent;
+          if (elementBag.includes(element)) return;
+          if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
+          
+          const textContent = element.innerText;
           if (!textContent.trim().length) {
             // text content should not empty
             return;
           }
 
-
           //const textSpan = document.createElement("span");
           //element.parentNode.replaceChild(textSpan, element);
 
-          elementBag.push({
-            c: element,
-            tc: textContent,
-          });
+          elementBag.push(element);
+
+          //ignoreElements.push(element)
         });
       });
     });
 
     if (elementBag.length) {
-      miri.addTweets(elementBag); // TODO: might need be changed to generalized version
+      const bag = []
+      elementBag.forEach( (e) => { 
+        bag.push({
+          c: e,
+          tc: e.textContent,
+        });
+      });
+      miri.addTweets(bag); // TODO: might need be changed to generalized version
     }
   };
 
