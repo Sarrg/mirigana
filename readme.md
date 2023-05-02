@@ -3,6 +3,13 @@ an experimental chrome extension to insert furigana for any website.
 
 ![](screenshot/screen2.png)
 
+## Tested websites
+
+- Twitter
+- Wikipedia
+- Youtube
+
+
 ## Installation
 
 ```
