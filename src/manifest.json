@@ -37,7 +37,8 @@
       "https://twitter.com/*",
       "https://tweetdeck.twitter.com/*",
       "https://ja.wikipedia.org/*",
-      "https://www.youtube.com/*"
+      "https://www.youtube.com/*",
+      "http://localhost/*"
     ],
     "js": [
       "constants.js",
@@ -54,6 +55,7 @@
 
   "permissions": [
     "tabs",
-    "storage"
+    "storage",
+    "contextMenus"
   ]
 }
