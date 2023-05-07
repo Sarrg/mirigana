@@ -161,9 +161,9 @@ const renderKanji = (kana, kanji, context) => {
   el.setAttribute('ctx', context)
 
   el.addEventListener(
-    'pointerdown',
+    'click',
     (e)=> {
-      if (document.getSelection().isCollapsed) {
+      if (document.getSelection().isCollapsed && e.altKey) {
         const ctx = e.target.getAttribute('ctx')
         if(FilterStorage.filter_exists(ctx)) {
           FilterStorage.delete(ctx);
@@ -171,9 +171,13 @@ const renderKanji = (kana, kanji, context) => {
         else {
           FilterStorage.add(ctx);
         }
+        
+        // prevent other actions to be triggered
+        e.stopImmediatePropagation();
+        e.preventDefault();
       }
     },
-    false
+    true
   );
   return el;
 };
