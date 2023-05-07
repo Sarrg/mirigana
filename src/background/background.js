@@ -154,6 +154,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { event } = request;
+  if (event !== MIRI_EVENTS.LOAD_SELECTORS) {
+    // reject other events
+    return false;
+  }
+
+  chrome.storage.sync.get((result = {}) => {
+    sendResponse({
+      selectors: result[SELECTORS_KEY],
+    });
+  });
+
+  // indicate async callback
+  return true;
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { event } = request;
   if (event !== MIRI_EVENTS.LOAD_EXTENSION_INFO) {
     // reject other events
     return false;

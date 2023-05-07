@@ -45,6 +45,7 @@
       "content_scripts/console.js",
       "content_scripts/setting-storage.js",
       "content_scripts/filter-storage.js",
+      "content_scripts/selector-storage.js",
       "content_scripts/common.js",
       "content_scripts/miri.js",
       "content_scripts/twitter.js",

@@ -8,6 +8,7 @@ debug
 ElementPicker
 */
 
+var component_query = '';
 var selector_query = '';
 
 const createButton = function(id, text) {
@@ -61,6 +62,7 @@ const addBar = async function() {
     bar.appendChild(quit_btn);
 
     create_btn.addEventListener('click', (e) => {
+      create_selector();
       unpick();
       removeBar();
     });
@@ -82,8 +84,21 @@ const addBar = async function() {
   }
 }
 
+const create_selector = function() {
+  const loc = window.location;
+  const site = loc.port === '' ? loc.host : loc.hostname;
+
+  const selector = [
+    site,
+    component_query,
+    selector_query,
+  ]
+  SelectorStorage.add(selector);
+}
+
 const pick = async function() {
-  const nodes = document.querySelectorAll(selector_query);
+  const component = document.body.querySelector(component_query);
+  const nodes = component.querySelectorAll(selector_query);
   nodes.forEach((node) => {node.style.outline = "#f00 solid 2px";});
 
   const bar = document.body.querySelector('#filterbar');
@@ -91,9 +106,22 @@ const pick = async function() {
 }
 
 const unpick = async function() {
-  const nodes = document.querySelectorAll(selector_query);
-  nodes.forEach((node) => {node.style.outline = "";});
-  selector_query = ""
+  const component = document.body.querySelector(component_query);
+  const nodes = component.querySelectorAll(selector_query);
+  nodes.forEach((node) => {node.style.outline = '';});
+  component_query = '';
+  selector_query = '';
+}
+
+const get_element_query = function (element) {
+  query = element.tagName;
+  if (element.id !== '') {
+    query += '#' + element.id;
+  }
+  if (element.className !== '') {
+    query += '.' + element.className.replaceAll(' ', '.');
+  }
+  return query;
 }
 
 const activate_picker = async function() {
@@ -103,12 +131,16 @@ const activate_picker = async function() {
   picker.action = {
     trigger: "click",
     callback: (function (target) {
-      if (target.className === '') {
-        selector_query = target.tagName
+      var inspect = target.parentNode;
+      while (inspect !== document.body) {
+        if (inspect.childElementCount > 1) {
+          mainComponent = inspect;
+        }
+        inspect = inspect.parentNode;
       }
-      else {
-        selector_query = `.${target.className}`
-      }
+
+      component_query = get_element_query(mainComponent);
+      selector_query = get_element_query(target);
       pick();
       picker.close();
       picker = null;

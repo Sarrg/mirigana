@@ -43,7 +43,7 @@ const registerMutationHook = () => {
 
   if (!mainContainer) {
     log('not found main container element.');
-    return;
+    return false;
   }
 
   const observer = new MutationObserver((mutationsList) => {
@@ -135,6 +135,7 @@ const registerMutationHook = () => {
   });
 
   observer.observe(mainContainer, { childList: true, subtree: true });
+  return true;
 };
 
 const registerDeckMutationHook = () => {
@@ -146,7 +147,7 @@ const registerDeckMutationHook = () => {
 
   if (!mainContainer) {
     log('not found main container element.');
-    return;
+    return false;
   }
 
   const observer = new MutationObserver((mutationsList) => {
@@ -213,6 +214,7 @@ const registerDeckMutationHook = () => {
   });
 
   observer.observe(mainContainer, { childList: true, subtree: true });
+  return true;
 };
 
 
@@ -227,19 +229,20 @@ test_selectorQueries = {
 }
 
 const registerGeneralMutationHook = () => {
-  const MAIN_CONTAINER_SELECTOR = test_mainComponents[window.location.hostname];
-  if (MAIN_CONTAINER_SELECTOR === undefined) {
-    return;
+  const loc = window.location;
+  const site = loc.port === '' ? loc.host : loc.hostname;
+
+  if (!SelectorStorage.has_selector(site)) {
+    return false;
   }
 
-  const mainContainer = document.querySelector(MAIN_CONTAINER_SELECTOR);
+  const componentQuery = SelectorStorage.selectors.get(site)['component'];
+  const mainContainer = document.body.querySelector(componentQuery);
   
   if (!mainContainer) {
     log('not found main container element.');
-    return;
+    return false;
   }
-
-  const ELEMENT_SELECTOR = test_selectorQueries[window.location.hostname];
 
   const findElements = (mutationsList) => {
     const elementBag = [];
@@ -252,29 +255,38 @@ const registerGeneralMutationHook = () => {
       }
 
       addedNodes.forEach((node) => {
+        while (node.nodeType === 3) {
+          // a selector will be not a text node and we choose the grandparent node
+          // because the parent might be the node we are looking for
+          // TODO: it might be necessary to pick the first child of the container which contains the node
+          node = node.parentNode.parentNode
+        }
+
         if (node.nodeType !== 1) {
           // node type should be element(1)
           return;
         }
-
-        const elements = node.querySelectorAll(ELEMENT_SELECTOR);
         
-        elements.forEach((element) => {
-          if (elementBag.includes(element)) return;
-          if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
+        const queries = SelectorStorage.selectors.get(site)['queries']
+
+        queries.forEach((query) => {
+          const elements = node.querySelectorAll(query);
           
-          const textContent = element.innerText;
-          if (!textContent.trim().length) {
-            // text content should not empty
-            return;
-          }
+          elements.forEach((element) => {
+            if (elementBag.includes(element)) return;
+            if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
+            
+            const textContent = element.innerText;
+            if (!textContent.trim().length) {
+              // text content should not empty
+              return;
+            }
 
-          //const textSpan = document.createElement("span");
-          //element.parentNode.replaceChild(textSpan, element);
+            //const textSpan = document.createElement("span");
+            //element.parentNode.replaceChild(textSpan, element);
 
-          elementBag.push(element);
-
-          //ignoreElements.push(element)
+            elementBag.push(element);
+          });
         });
       });
     });
@@ -295,9 +307,16 @@ const registerGeneralMutationHook = () => {
 
   observer.observe(mainContainer, { childList: true, subtree: true });
   findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer
+
+  SelectorStorage.on('updated', () => {
+    const loc = window.location;
+    const site = loc.port === '' ? loc.host : loc.hostname;
+    const componentQuery = SelectorStorage.selectors.get(site)['component'];
+    const mainContainer = document.body.querySelector(componentQuery);
+    findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer
+  });
+  return true;
 };
-
-
 
 // main
 log('initialized.');
@@ -305,7 +324,19 @@ log('initialized.');
 var hooked = false;
 hooked = registerMutationHook();
 hooked = hooked || registerDeckMutationHook();
-hooked = hooked || registerGeneralMutationHook();
+
+if (!hooked) {
+  SelectorStorage.on('loaded', () => {
+    hooked = hooked || registerGeneralMutationHook();
+
+    SelectorStorage.on('updated', () => {
+      if (!hooked) {
+        hooked = registerGeneralMutationHook();
+      }
+    });
+  });
+}
+
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { event, value } = request;
