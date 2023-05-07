@@ -41,11 +41,19 @@ const countSameChar = (arr, char) => arr.reduce((a, b) => {
 // smash the token into the substring which not mixed kanji and kana
 const smash = (tkn) => {
   // prepare the data structure
+  let isPrefix = true;
   const surfaceGroup = [...tkn.s].reduce((group, curr, idx) => {
-    const isKanji = (/[一-龯々]/).test(curr);
+    let isKanji = (/[一-龯々]/).test(curr);
+    if (isKanji) {
+      isPrefix = false;
+    }
+    else {
+      isKanji = isPrefix;
+    }
     if (idx === 0 || !isKanji || isKanji !== group.lastIsKanji) {
       group.push({
         s: curr,
+        isPrefix,
         isKanji,
         r: [],
         p: tkn.p + idx,
@@ -92,7 +100,7 @@ const smash = (tkn) => {
   });
 
   return surfaceGroup
-    .filter((sg) => sg.isKanji)
+    .filter((sg) => sg.isPrefix || sg.isKanji)
     .map((sg) => ({
       s: sg.s,
       r: sg.r.join(''),
