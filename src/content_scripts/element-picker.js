@@ -97,6 +97,7 @@ const unpick = async function() {
 }
 
 const activate_picker = async function() {
+  addBar();
   var picker = new ElementPicker();
   picker.transition = "all 50ms ease";
   picker.action = {
@@ -118,7 +119,6 @@ const activate_picker = async function() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { event, value } = request;
   if (event === MIRI_EVENTS.ACTIVATE_ELEMENT_PICKER) {
-    addBar();
     activate_picker();
   }
 });

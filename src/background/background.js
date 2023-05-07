@@ -21,6 +21,20 @@ retrieveFromCache
 persiseToCache
 */
 
+const sendToActiveTab = async (event, value) => {
+  let queryOptions = { active: true, lastFocusedWindow: true };
+  // `tab` will either be a `tabs.Tab` instance or `undefined`.
+  let [tab] = await chrome.tabs.query(queryOptions);
+  
+  if (tab !== undefined) {
+    const msg = {
+      event,
+      value,
+    };
+    chrome.tabs.sendMessage(tab.id, msg);
+  }
+}
+
 function listenTokenParseMessage(callback) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const { event, tweets } = request;
@@ -165,4 +179,19 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
       chrome.action.disable();
     }
   })
+});
+
+// add context menu
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId === 'activate-picker') {
+    sendToActiveTab(MIRI_EVENTS.ACTIVATE_ELEMENT_PICKER);
+  }
+});
+
+chrome.runtime.onInstalled.addListener(function () {
+  chrome.contextMenus.create({
+    title: "Enter element picker mode",
+    contexts: ["all"],
+    id: 'activate-picker'
+  });
 });

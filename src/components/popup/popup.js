@@ -36,6 +36,20 @@ const broadcast = (event, value) => {
   });
 };
 
+const sendToActiveTab = async (event, value) => {
+  let queryOptions = { active: true, lastFocusedWindow: true };
+  // `tab` will either be a `tabs.Tab` instance or `undefined`.
+  let [tab] = await chrome.tabs.query(queryOptions);
+  
+  if (tab !== undefined) {
+    const msg = {
+      event,
+      value,
+    };
+    chrome.tabs.sendMessage(tab.id, msg);
+  }
+}
+
 function prepareToggleButton(initValue) {
   const DISABLE_CLASSNAME = 'disabled';
   const toggler = document.querySelector('.round-toggle-button');
@@ -164,7 +178,7 @@ chrome.storage.sync.get([
 });
 
 document.querySelector('#element-picker').addEventListener('click', () => {
-  broadcast(MIRI_EVENTS.ACTIVATE_ELEMENT_PICKER);
+  sendToActiveTab(MIRI_EVENTS.ACTIVATE_ELEMENT_PICKER);
   window.close();
   return true;
 });
