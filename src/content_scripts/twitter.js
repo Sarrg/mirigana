@@ -230,7 +230,7 @@ test_selectorQueries = {
 
 const registerGeneralMutationHook = () => {
   const loc = window.location;
-  const site = loc.port === '' ? loc.host : loc.hostname;
+  const site = loc.host;
 
   if (!SelectorStorage.has_selector(site)) {
     return false;
@@ -246,6 +246,19 @@ const registerGeneralMutationHook = () => {
 
   const findElements = (mutationsList) => {
     const elementBag = [];
+
+    const addToBag = (element) => {
+      if (elementBag.includes(element)) return;
+      if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
+      
+      const textContent = element.innerText;
+      if (!textContent.trim().length) {
+        // text content should not empty
+        return;
+      }
+      elementBag.push(element);
+    }
+
     mutationsList.forEach((mutation) => {
       const { addedNodes } = mutation;
 
@@ -255,38 +268,28 @@ const registerGeneralMutationHook = () => {
       }
 
       addedNodes.forEach((node) => {
-        while (node.nodeType === 3) {
-          // a selector will be not a text node and we choose the grandparent node
-          // because the parent might be the node we are looking for
-          // TODO: it might be necessary to pick the first child of the container which contains the node
-          node = node.parentNode.parentNode
+        var addDirectly = false;
+        if (node.nodeType === 3) {
+          // should not be a text node, therefore we use the parent node
+          if (node.parentNode === null) return;
+          node = node.parentNode
+          addDirectly = true;
         }
 
-        if (node.nodeType !== 1) {
-          // node type should be element(1)
-          return;
-        }
+        // node type should be element(1)
+        if (node.nodeType !== 1) return;
         
         const queries = SelectorStorage.selectors.get(site)['queries']
 
         queries.forEach((query) => {
-          const elements = node.querySelectorAll(query);
-          
-          elements.forEach((element) => {
-            if (elementBag.includes(element)) return;
-            if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
-            
-            const textContent = element.innerText;
-            if (!textContent.trim().length) {
-              // text content should not empty
-              return;
-            }
-
-            //const textSpan = document.createElement("span");
-            //element.parentNode.replaceChild(textSpan, element);
-
-            elementBag.push(element);
-          });
+          if (addDirectly) {
+            if (node.parentNode.matches(query))
+              addToBag(node.parentNode);
+          }
+          else {
+            const elements = node.querySelectorAll(query);
+            elements.forEach(addToBag);
+          }
         });
       });
     });
@@ -310,7 +313,7 @@ const registerGeneralMutationHook = () => {
 
   SelectorStorage.on('updated', () => {
     const loc = window.location;
-    const site = loc.port === '' ? loc.host : loc.hostname;
+    const site = loc.host;
     const componentQuery = SelectorStorage.selectors.get(site)['component'];
     const mainContainer = document.body.querySelector(componentQuery);
     findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer

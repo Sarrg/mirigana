@@ -86,7 +86,7 @@ const addBar = async function() {
 
 const create_selector = function() {
   const loc = window.location;
-  const site = loc.port === '' ? loc.host : loc.hostname;
+  const site = loc.host;
 
   const selector = [
     site,
