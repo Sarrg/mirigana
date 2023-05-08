@@ -16,14 +16,13 @@ const selectorReplacer = (k, v) => {
   return v;
 }
 
-const selectorReviver = (k, v) => {
-  if (k === '') {
-    return new Map(v);
-  }
-  if (k === 'queries') {
-    return new Set(v);
-  }
-  return v;
+const createSelector = (site, component, queries=undefined) => {
+  key = site;
+  value = {
+    'component': component,
+    'queries': new Set(queries),
+  };
+  return [key, value];
 }
 
 const SelectorStorage = {
@@ -53,10 +52,13 @@ const SelectorStorage = {
       },
       (response) => {
         debug('responsed: LOAD_SELECTORS');
-        this.loaded = true;
-        const parsed = JSON.parse(response.selectors, selectorReviver);
-        this.selectors = new Map(parsed);
+        this.selectors = new Map();
+        response.selectors.forEach((selector) => {
+          [key, value] = createSelector(selector[0], selector[1]['component'], selector[1]['queries']);
+          this.selectors.set(key, value);
+        });
 
+        this.loaded = true;
         this.eventHandlers.loaded
           .forEach((func) => func(this.response));
 
@@ -67,7 +69,8 @@ const SelectorStorage = {
 
   save() {
     const data = {
-      [SELECTORS_KEY]: JSON.stringify(this.selectors, selectorReplacer)
+      // converts selectors to storable structure
+      [SELECTORS_KEY]: JSON.parse(JSON.stringify(this.selectors, selectorReplacer))
     };
     chrome.storage.sync.set(data);
   },
@@ -79,9 +82,8 @@ const SelectorStorage = {
   add(selector) {
     [site, component, query] = selector
     if (!this.selectors.has(site)) {
-      this.selectors.set(site, {})
-      this.selectors.get(site)['component'] = component;
-      this.selectors.get(site)['queries'] = new Set();
+      const [k, v] = createSelector(site, component);
+      this.selectors.set(k, v);
     }
 
     const queries = this.selectors.get(site)['queries']
