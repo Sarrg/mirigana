@@ -38,7 +38,8 @@
       "https://tweetdeck.twitter.com/*",
       "https://ja.wikipedia.org/*",
       "https://www.youtube.com/*",
-      "http://localhost/*"
+      "http://localhost/*",
+      "https://ankiuser.net/*"
     ],
     "js": [
       "constants.js",
@@ -48,7 +49,7 @@
       "content_scripts/selector-storage.js",
       "content_scripts/common.js",
       "content_scripts/miri.js",
-      "content_scripts/twitter.js",
+      "content_scripts/mutationhook.js",
       "content_scripts/element-picker.js",
       "content_scripts/ElementPicker.js"
     ]
