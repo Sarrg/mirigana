@@ -41,20 +41,14 @@ const countSameChar = (arr, char) => arr.reduce((a, b) => {
 // smash the token into the substring which not mixed kanji and kana
 const smash = (tkn) => {
   // prepare the data structure
-  let isPrefix = true;
   const surfaceGroup = [...tkn.s].reduce((group, curr, idx) => {
     let isKanji = (/[一-龯々]/).test(curr);
-    if (isKanji) {
-      isPrefix = false;
-    }
-    else {
-      isKanji = isPrefix;
-    }
-    if (idx === 0 || !isKanji || isKanji !== group.lastIsKanji) {
+    let isNumber = (/[0-9]/).test(curr);
+    let hasFurigana = isKanji || isNumber
+    if (idx === 0 || !hasFurigana || hasFurigana !== group.lastHasFurigana) {
       group.push({
         s: curr,
-        isPrefix,
-        isKanji,
+        hasFurigana,
         r: [],
         p: tkn.p + idx,
       });
@@ -64,7 +58,7 @@ const smash = (tkn) => {
       last.s = `${last.s}${curr}`;
     }
 
-    group.lastIsKanji = isKanji;
+    group.lastHasFurigana = hasFurigana;
     return group;
   }, []);
 
@@ -91,7 +85,7 @@ const smash = (tkn) => {
       s.r.push(curr);
       readArray.shift();
 
-      if (!s.isKanji) {
+      if (!s.hasFurigana) {
         // current char of the surface form is not a kanji
         // break because the kana can only be matched one by one
         break;
@@ -100,7 +94,7 @@ const smash = (tkn) => {
   });
 
   return surfaceGroup
-    .filter((sg) => sg.isPrefix || sg.isKanji)
+    .filter((sg) => sg.hasFurigana)
     .map((sg) => ({
       s: sg.s,
       r: sg.r.join(''),
