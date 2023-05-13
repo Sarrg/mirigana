@@ -51,7 +51,7 @@
       "content_scripts/miri.js",
       "content_scripts/mutationhook.js",
       "content_scripts/element-picker.js",
-      "content_scripts/ElementPicker.js"
+      "thirdparty/html-element-picker.js"
     ]
   }],
 

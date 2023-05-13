@@ -2,7 +2,7 @@
 
 
 BACKGROUND_FILES=(
-"src/vendors/kuromoji.js"
+"src/thirdparty/kuromoji.js"
 "src/constants.js"
 "src/background/rules/rule-fix.js"
 "src/background/rules/rule-month.js"
