@@ -236,6 +236,7 @@ const registerGeneralMutationHook = () => {
     return false;
   }
 
+  console.log(document.readyState)
   const componentQuery = SelectorStorage.selectors.get(site)['component'];
   const mainContainer = document.body.querySelector(componentQuery);
   
@@ -268,23 +269,19 @@ const registerGeneralMutationHook = () => {
       }
 
       addedNodes.forEach((node) => {
-        var addDirectly = false;
         if (node.nodeType === 3) {
           // should not be a text node, therefore we use the parent node
           if (node.parentNode === null) return;
           node = node.parentNode
-          addDirectly = true;
         }
 
         // node type should be element(1)
         if (node.nodeType !== 1) return;
         
-        const queries = SelectorStorage.selectors.get(site)['queries']
-
+        const queries = SelectorStorage.selectors.get(site)['queries'];
         queries.forEach((query) => {
-          if (addDirectly) {
-            if (node.parentNode.matches(query))
-              addToBag(node.parentNode);
+          if (node.matches(query)) {
+            addToBag(node);
           }
           else {
             const elements = node.querySelectorAll(query);
@@ -329,15 +326,17 @@ hooked = registerMutationHook();
 hooked = hooked || registerDeckMutationHook();
 
 if (!hooked) {
-  SelectorStorage.on('loaded', () => {
-    hooked = hooked || registerGeneralMutationHook();
+  setTimeout( () => {
+    SelectorStorage.on('loaded', () => {
+      hooked = hooked || registerGeneralMutationHook();
 
-    SelectorStorage.on('updated', () => {
-      if (!hooked) {
-        hooked = registerGeneralMutationHook();
-      }
+      SelectorStorage.on('updated', () => {
+        if (!hooked) {
+          hooked = registerGeneralMutationHook();
+        }
+      });
     });
-  });
+  }, 250);
 }
 
 
