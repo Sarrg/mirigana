@@ -17,23 +17,6 @@ const onTokenReady = (c, t) => {
   renderRuby(c, t);
 };
 
-SettingStorage.on('updated', (settings) => {
-  const {
-    enabled,
-    pct,
-    furigana_selectable,
-    color
-  } = settings;
-  setRubyVisibility('miri-ruby-visible', enabled);
-  updateRubySizeStyle('miri-ruby', pct);
-  updateRubyColorStyle('miri-ruby-color', color);
-  updateSelectStyle('miri-furigana-select', furigana_selectable);
-});
-
-const miri = new Miri({
-  onTokenReady,
-});
-
 const registerMutationHook = () => {
   const MAIN_CONTAINER_SELECTOR = '#react-root';
   const TL_CONTAINER_SELECTOR = 'section>div>div>div';
@@ -217,17 +200,6 @@ const registerDeckMutationHook = () => {
   return true;
 };
 
-
-test_mainComponents = {
-  'ja.wikipedia.org': 'body > div.mw-page-container',
-  'www.youtube.com': 'body > ytd-app',
-}
-
-test_selectorQueries = {
-  'ja.wikipedia.org': 'P',
-  'www.youtube.com': '#content.style-scope.ytd-expander',
-}
-
 const registerGeneralMutationHook = () => {
   const loc = window.location;
   const site = loc.host;
@@ -319,40 +291,78 @@ const registerGeneralMutationHook = () => {
 };
 
 // main
-log('initialized.');
 
-var hooked = false;
-hooked = registerMutationHook();
-hooked = hooked || registerDeckMutationHook();
+oninit.push ( () => {
+  log('initialized.');
 
-if (!hooked) {
-  setTimeout( () => {
-    SelectorStorage.on('loaded', () => {
-      hooked = hooked || registerGeneralMutationHook();
+  window.miri = new Miri({
+    onTokenReady,
+  });
 
-      SelectorStorage.on('updated', () => {
-        if (!hooked) {
-          hooked = registerGeneralMutationHook();
-        }
+  SettingStorage.on('loaded', (settings) => {
+    const {
+      enabled,
+      pct,
+      furigana_selectable,
+      color
+    } = settings;
+    setRubyVisibility('miri-ruby-visible', enabled);
+    updateRubySizeStyle('miri-ruby', pct);
+    updateRubyColorStyle('miri-ruby-color', color);
+    updateSelectStyle('miri-furigana-select', furigana_selectable);
+  });
+
+  SettingStorage.on('updated', (settings) => {
+    if ('enabled' in settings) {
+      setRubyVisibility('miri-ruby-visible', settings.enabled);
+    }
+    
+    if ('pct' in settings) {
+      updateRubySizeStyle('miri-ruby', settings.pct);
+    }
+
+    if ('color' in settings) {
+      updateRubyColorStyle('miri-ruby-color', settings.color);
+    }
+
+    if ('furigana_selectable' in settings) {
+      updateSelectStyle('miri-furigana-select', settings.furigana_selectable);
+    }
+  });
+
+  var hooked = false;
+  hooked = registerMutationHook();
+  hooked = hooked || registerDeckMutationHook();
+
+  if (!hooked) {
+    setTimeout( () => {
+      SelectorStorage.on('loaded', () => {
+        hooked = hooked || registerGeneralMutationHook();
+
+        SelectorStorage.on('updated', () => {
+          if (!hooked) {
+            hooked = registerGeneralMutationHook();
+          }
+        });
       });
-    });
-  }, 250);
-}
-
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  const { event, value } = request;
-  if (event === MIRI_EVENTS.TOGGLE_EXTENSION) {
-    setRubyVisibility('miri-ruby-visible', value);
-    SettingStorage.set({ enabled: value });
-  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SIZE) {
-    updateRubySizeStyle('miri-ruby', value);
-    SettingStorage.set({ pct: value });
-  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_COLOR) {
-    updateRubyColorStyle('miri-ruby-color', value);
-    SettingStorage.set({ color: value });
-  } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SELECTABLE) {
-    updateSelectStyle('miri-furigana-select', value);
-    SettingStorage.set({ furigana_selectable: value });
+    }, 250);
   }
+
+
+  // chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  //   const { event, value } = request;
+  //   if (event === MIRI_EVENTS.TOGGLE_EXTENSION) {
+  //     setRubyVisibility('miri-ruby-visible', value);
+  //     SettingStorage.set({ enabled: value });
+  //   } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SIZE) {
+  //     updateRubySizeStyle('miri-ruby', value);
+  //     SettingStorage.set({ pct: value });
+  //   } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_COLOR) {
+  //     updateRubyColorStyle('miri-ruby-color', value);
+  //     SettingStorage.set({ color: value });
+  //   } else if (event === MIRI_EVENTS.UPDATE_FURIGANA_SELECTABLE) {
+  //     updateSelectStyle('miri-furigana-select', value);
+  //     SettingStorage.set({ furigana_selectable: value });
+  //   }
+  // });
 });

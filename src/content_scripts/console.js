@@ -1,7 +1,6 @@
 /* eslint  */
 /* global
 
-MIRI_EVENTS
 */
 
 window.isDevelopment = false;
@@ -19,12 +18,14 @@ const debug = (...args) => {
   }
 };
 
-chrome.runtime.sendMessage(
-  { event: MIRI_EVENTS.LOAD_EXTENSION_INFO },
-  ({ info }) => {
-    debug('responsed: LOAD_EXTENSION_INFO');
-    if (info.installType === 'development') {
-      window.isDevelopment = true;
-    }
-  },
-);
+oninit.push( () => {
+  chrome.runtime.sendMessage(
+    { event: MIRI_EVENTS.LOAD_EXTENSION_INFO },
+    ({ info }) => {
+      debug('responsed: LOAD_EXTENSION_INFO');
+      if (info.installType === 'development') {
+        window.isDevelopment = true;
+      }
+    },
+  )
+});

@@ -53,7 +53,7 @@ const SPECIAL_DATE_MAP = {
 
 const getDateReading = date => SPECIAL_DATE_MAP[date];
 
-const ruleDate = (token) => {
+export const ruleDate = (token) => {
   const result = [];
   for (let i = 0; i < token.length; i++) {
     const curr = token[i];

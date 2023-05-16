@@ -1,25 +1,8 @@
-/* global
-kuromoji
-elementpicker
-EXTENSION_ENABLED_KEY
-EXTENSION_ENABLED_DEFAULT
-FURIGANA_SIZE_PERCENTAGE_KEY
-FURIGANA_SIZE_PERCENTAGE_DEFAULT
-FURIGANA_COLOR_KEY
-FURIGANA_COLOR_DEFAULT
-FURIGANA_SELECTABLE_KEY
-FURIGANA_SELECTABLE_DEFAULT
-FILTER_LIST_KEY
-CURRENT_PARSE_ENGINE_KEY
-CURRENT_PARSE_ENGINE_DEFAULT
-
-MIRI_EVENTS
-PARSE_ENGINES
-
-rebulidToken
-retrieveFromCache
-persiseToCache
-*/
+import {MIRI_EVENTS, PARSE_ENGINES, STORAGE_KEYS, SETTING_DEFAULTS} from './constants.js';
+import {kuromoji} from './thirdparty/kuromoji.js';
+import {rebulidToken} from './background/token-rules.js';
+import {retrieveFromCache, persiseToCache} from './background/memory-cache.js';
+import "./storages.js";
 
 const sendToActiveTab = async (event, value) => {
   let queryOptions = { active: true, lastFocusedWindow: true };
@@ -49,7 +32,7 @@ function listenTokenParseMessage(callback) {
 
 // init engine
 chrome.storage.local.get((result = {}) => {
-  const currentEngineKey = result[CURRENT_PARSE_ENGINE_KEY] || CURRENT_PARSE_ENGINE_DEFAULT;
+  const currentEngineKey = result[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY] || SETTING_DEFAULTS.CURRENT_PARSE_ENGINE_DEFAULT;
   if (currentEngineKey === PARSE_ENGINES[0].key) {
     // local
     kuromoji.builder({ dicPath: 'data/' }).build().then((tokenizer) => {
@@ -124,10 +107,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   chrome.storage.sync.get((result = {}) => {
     sendResponse({
-      enabled: nullish(result[EXTENSION_ENABLED_KEY], EXTENSION_ENABLED_DEFAULT),
-      pct: nullish(result[FURIGANA_SIZE_PERCENTAGE_KEY], FURIGANA_SIZE_PERCENTAGE_DEFAULT),
-      color: nullish(result[FURIGANA_COLOR_KEY], FURIGANA_COLOR_DEFAULT),
-      furigana_selectable: nullish(result[FURIGANA_SELECTABLE_KEY], FURIGANA_SELECTABLE_DEFAULT),
+      enabled: nullish(result[STORAGE_KEYS.EXTENSION_ENABLED_KEY], SETTING_DEFAULTS.EXTENSION_ENABLED_DEFAULT),
+      pct: nullish(result[STORAGE_KEYS.FURIGANA_SIZE_PERCENTAGE_KEY], SETTING_DEFAULTS.FURIGANA_SIZE_PERCENTAGE_DEFAULT),
+      color: nullish(result[STORAGE_KEYS.FURIGANA_COLOR_KEY], SETTING_DEFAULTS.FURIGANA_COLOR_DEFAULT),
+      furigana_selectable: nullish(result[STORAGE_KEYS.FURIGANA_SELECTABLE_KEY], SETTING_DEFAULTS.FURIGANA_SELECTABLE_DEFAULT),
     });
   });
 
@@ -141,10 +124,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // reject other events
     return false;
   }
+  return true;
 
   chrome.storage.sync.get((result = {}) => {
     sendResponse({
-      filters: result[FILTER_LIST_KEY],
+      filters: result[STORAGE_KEYS.FILTER_LIST_KEY],
     });
   });
 
@@ -161,7 +145,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   chrome.storage.sync.get((result = {}) => {
     sendResponse({
-      selectors: result[SELECTORS_KEY],
+      selectors: result[STORAGE_KEYS.SELECTORS_KEY],
     });
   });
 

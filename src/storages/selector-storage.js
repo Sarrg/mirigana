@@ -6,6 +6,8 @@ debug
 
 // eslint-disable-next-line no-unused-vars
 
+import {MIRI_EVENTS, STORAGE_KEYS} from '../constants.js';
+
 const selectorReplacer = (k, v) => {
   if (k === '') {
     return Array.from(v);
@@ -17,16 +19,16 @@ const selectorReplacer = (k, v) => {
 }
 
 const createSelector = (site, component, queries=undefined) => {
-  key = site;
-  value = {
+  const key = site;
+  const value = {
     'component': component,
     'queries': new Set(queries),
   };
   return [key, value];
 }
 
-const SelectorStorage = {
-  selectors: new Map(),
+export const SelectorStorage = {
+  selectors: null,
   loaded: false,
 
   eventHandlers: {
@@ -46,31 +48,30 @@ const SelectorStorage = {
   },
 
   load() {
-    chrome.runtime.sendMessage(
-      {
-        event: MIRI_EVENTS.LOAD_SELECTORS,
-      },
-      (response) => {
-        debug('responsed: LOAD_SELECTORS');
+    if (!this.loaded) {
+      chrome.storage.sync.get(STORAGE_KEYS.SELECTORS_KEY, (result = {}) => {
+        const selectors = result[STORAGE_KEYS.SELECTORS_KEY];
+        
         this.selectors = new Map();
-        response.selectors.forEach((selector) => {
-          [key, value] = createSelector(selector[0], selector[1]['component'], selector[1]['queries']);
-          this.selectors.set(key, value);
-        });
 
+        if (selectors !== undefined) {
+          selectors.forEach((selector) => {
+            const [key, value] = createSelector(selector[0], selector[1]['component'], selector[1]['queries']);
+            this.selectors.set(key, value);
+          });
+        }
+  
         this.loaded = true;
         this.eventHandlers.loaded
-          .forEach((func) => func(this.response));
-
-        // this.checkReady();
-      },
-    );
+          .forEach((func) => func(this.selectors));
+      });
+    }
   },
 
   save() {
     const data = {
       // converts selectors to storable structure
-      [SELECTORS_KEY]: JSON.parse(JSON.stringify(this.selectors, selectorReplacer))
+      [STORAGE_KEYS.SELECTORS_KEY]: JSON.parse(JSON.stringify(this.selectors, selectorReplacer))
     };
     chrome.storage.sync.set(data);
   },
@@ -88,7 +89,7 @@ const SelectorStorage = {
 
     const queries = this.selectors.get(site)['queries']
     if (!queries.has(query)) {
-      debug('added: '+query);
+      //debug('added: '+query);
       queries.add(query);
       this.save();
       this.eventHandlers.updated
@@ -99,7 +100,7 @@ const SelectorStorage = {
   delete(selector) {
     [site, query] = selector
     if (this.has_selector(site, query)) {
-      debug('deleted: '+query);
+      //debug('deleted: '+query);
       const queries = this.selectors.get(site)['queries']
       queries.delete(query);
 

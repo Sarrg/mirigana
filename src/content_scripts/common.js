@@ -1,10 +1,26 @@
 /* eslint no-unused-vars: 0 */
 /* global
 
-MIRI_EVENTS
-
 SettingStorage
 */
+
+const oninit = [];
+
+(async () => {
+  var src = chrome.runtime.getURL("constants.js");
+  const consts = await import(src);
+  window.MIRI_EVENTS = consts.MIRI_EVENTS
+
+  var src = chrome.runtime.getURL("storages.js");
+  const storages = await import(src);
+  window.FilterStorage = storages.FilterStorage;
+  window.SelectorStorage = storages.SelectorStorage;
+  window.SettingStorage = storages.SettingStorage;
+  window.TokenStorage = storages.TokenStorage;
+  
+  // TODO: release message that background is loaded
+  oninit.forEach(func => func());
+})();
 
 window.__mirigana__ = (window.__mirigana__ || {}); // eslint-disable-line no-underscore-dangle
 
@@ -267,11 +283,14 @@ const renderRuby = (container, token) => {
   }
 };
 
-if (isChrome()) {
-  FilterStorage.on('updated', (event, filter) => {
-    const selector_query = `ruby[ctx="${filter}"] .furigana`;
-    document.querySelectorAll(selector_query).forEach((rb) => {
-      rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
+
+oninit.push(() => {
+  if (isChrome()) {
+    FilterStorage.on('updated', (event, filter) => {
+      const selector_query = `ruby[ctx="${filter}"] .furigana`;
+      document.querySelectorAll(selector_query).forEach((rb) => {
+        rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
+      });
     });
-  });
-}
+  }
+});

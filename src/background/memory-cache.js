@@ -1,7 +1,7 @@
 const TokenCache = new Map();
 
 // eslint-disable-next-line no-unused-vars
-function retrieveFromCache(tweets) {
+export function retrieveFromCache(tweets) {
   const cacheArray = [];
   const requestArray = [];
 
@@ -19,6 +19,6 @@ function retrieveFromCache(tweets) {
 }
 
 // eslint-disable-next-line no-unused-vars
-function persiseToCache(k, v) {
+export function persiseToCache(k, v) {
   TokenCache.set(k, v);
 }

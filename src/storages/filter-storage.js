@@ -1,12 +1,14 @@
 /* global
-MIRI_EVENTS
 
 debug
 */
 
 // eslint-disable-next-line no-unused-vars
-const FilterStorage = {
-  filters: new Set(),
+
+import {MIRI_EVENTS, STORAGE_KEYS} from '../constants.js';
+
+export const FilterStorage = {
+  filters: null,
   loaded: false,
 
   eventHandlers: {
@@ -25,27 +27,21 @@ const FilterStorage = {
     }
   },
 
-  load() {
-    chrome.runtime.sendMessage(
-      {
-        event: MIRI_EVENTS.LOAD_FILTERS,
-      },
-      (response) => {
-        debug('responsed: LOAD_FILTERS');
+  load() {    
+    if (!this.loaded) {
+      chrome.storage.sync.get(STORAGE_KEYS.FILTER_LIST_KEY, (result = {}) => {
+        this.filters = new Set(result[STORAGE_KEYS.FILTER_LIST_KEY]);
+
         this.loaded = true;
-        this.filters = new Set(response.filters);
-
         this.eventHandlers.loaded
-          .forEach((func) => func(this.response));
-
-        // this.checkReady();
-      },
-    );
+          .forEach((func) => func(this.filters));
+      });
+    }
   },
 
   save() {
     const data = {
-      [FILTER_LIST_KEY]: [...this.filters]
+      [STORAGE_KEYS.FILTER_LIST_KEY]: [...this.filters]
     };
     chrome.storage.sync.set(data);
   },
@@ -56,7 +52,7 @@ const FilterStorage = {
 
   add(filter) {
     if (!this.filter_exists(filter)) {
-      debug('added: '+filter);
+      //debug('added: '+filter);
       this.filters.add(filter);
       this.save();
       this.eventHandlers.updated
@@ -66,7 +62,7 @@ const FilterStorage = {
 
   delete(filter) {
     if (this.filter_exists(filter)) {
-      debug('deleted: '+filter);
+      //debug('deleted: '+filter);
       this.filters.delete(filter);
       this.save();
       this.eventHandlers.updated

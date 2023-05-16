@@ -14,7 +14,8 @@
   },
 
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
 
   "action": {
@@ -32,6 +33,23 @@
     "open_in_tab": false
   },
 
+  "web_accessible_resources": [
+    {
+      "resources": ["constants.js"],
+      "matches": ["<all_urls>"]
+    },
+    {
+      "resources": [
+        "storages.js",
+        "storages/filter-storage.js",
+        "storages/selector-storage.js",
+        "storages/setting-storage.js",
+        "storages/token-storage.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
   "content_scripts": [{
     "matches": [
       "https://twitter.com/*",
@@ -42,17 +60,14 @@
       "https://ankiuser.net/*"
     ],
     "js": [
-      "constants.js",
-      "content_scripts/console.js",
-      "content_scripts/setting-storage.js",
-      "content_scripts/filter-storage.js",
-      "content_scripts/selector-storage.js",
       "content_scripts/common.js",
+      "content_scripts/console.js",
       "content_scripts/miri.js",
       "content_scripts/mutationhook.js",
       "content_scripts/element-picker.js",
       "thirdparty/html-element-picker.js"
-    ]
+    ],
+    "type": "module"
   }],
 
   "permissions": [

@@ -5,7 +5,7 @@ const kanaToHira = (str = '') => str.replace(/[\u30a1-\u30f6]/g, (match) => {
   return String.fromCharCode(chr);
 });
 
-const rulePurify = (token) => {
+export const rulePurify = (token) => {
   const pured = token
     .filter((t) => /[\u4E00-\u9FFF]/.test(t.surface_form))
     .filter((t) => t.reading)

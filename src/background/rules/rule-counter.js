@@ -175,7 +175,7 @@ const getCounterReading = (number, counter) => {
 };
 
 
-const ruleCounter = (token) => {
+export const ruleCounter = (token) => {
   const result = [];
   for (let i = 0; i < token.length; i++) {
     const curr = token[i];

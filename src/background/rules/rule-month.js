@@ -31,7 +31,7 @@ const SPECIAL_MONTH_MAP = {
 
 const getMonthReading = date => SPECIAL_MONTH_MAP[date];
 
-const ruleMonth = (token) => {
+export const ruleMonth = (token) => {
   const result = [];
   for (let i = 0; i < token.length; i++) {
     const curr = token[i];
