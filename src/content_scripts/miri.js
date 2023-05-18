@@ -23,7 +23,8 @@ class Miri {
     this.onTokenReady = onTokenReady;
     this.lastRequestTokens = new Date().getTime() - this.throttleTimeout;
 
-    SettingStorage.on('loaded', () => this.requestTokensThrottle());
+    //SettingStorage.on('loaded', () => this.requestTokensThrottle());
+    this.requestTokensThrottle();
   }
 
   // TODO rewrite this method with setTimeout
@@ -44,8 +45,7 @@ class Miri {
 
     const now = new Date().getTime();
     const elapsed = now - this.lastRequestTokens;
-    const shouldRequest = FilterStorage.loaded && (this.tweetPool.length > 0)
-      && (elapsed > this.throttleTimeout);
+    const shouldRequest = (this.tweetPool.length > 0) && (elapsed > this.throttleTimeout);
 
     debug('now:', now, 'last:', this.lastRequestTokens, 'elapsed:', elapsed, 'shouldRequest:', shouldRequest);
 

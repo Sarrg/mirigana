@@ -200,26 +200,24 @@ const registerDeckMutationHook = () => {
   return true;
 };
 
-const registerGeneralMutationHook = () => {
+const registerGeneralMutationHook = async () => {
   const loc = window.location;
   const site = loc.host;
 
-  if (!SelectorStorage.has_selector(site)) {
+  const {component} = await SelectorStorage.get(site);
+
+  if (component === undefined) {
     return false;
   }
-
-  console.log(document.readyState)
-  const componentQuery = SelectorStorage.selectors.get(site)['component'];
-  const mainContainer = document.body.querySelector(componentQuery);
+  const mainContainer = document.body.querySelector(component);
   
   if (!mainContainer) {
     log('not found main container element.');
     return false;
   }
 
-  const findElements = (mutationsList) => {
+  const findElements = async (mutationsList) => {
     const elementBag = [];
-
     const addToBag = (element) => {
       if (elementBag.includes(element)) return;
       if (element.innerHTML.includes('class="furigana"')) return; // TODO: check this
@@ -232,6 +230,7 @@ const registerGeneralMutationHook = () => {
       elementBag.push(element);
     }
 
+    const {queries} = await SelectorStorage.get(site);
     mutationsList.forEach((mutation) => {
       const { addedNodes } = mutation;
 
@@ -249,8 +248,6 @@ const registerGeneralMutationHook = () => {
 
         // node type should be element(1)
         if (node.nodeType !== 1) return;
-        
-        const queries = SelectorStorage.selectors.get(site)['queries'];
         queries.forEach((query) => {
           if (node.matches(query)) {
             addToBag(node);
@@ -280,13 +277,26 @@ const registerGeneralMutationHook = () => {
   observer.observe(mainContainer, { childList: true, subtree: true });
   findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer
 
-  SelectorStorage.on('updated', () => {
+  chrome.runtime.onMessage.addListener((message) => {
+    const {event} = message;
+  
+    if (event !== MIRI_EVENTS.SELECTOR_ADDED) {
+      return false;
+    }
+
+    const [site, component, query] = message.selector;
     const loc = window.location;
-    const site = loc.host;
-    const componentQuery = SelectorStorage.selectors.get(site)['component'];
-    const mainContainer = document.body.querySelector(componentQuery);
+    const current_site = loc.host;
+
+    if (current_site !== site) {
+      return false;
+    }
+
+    const mainContainer = document.body.querySelector(component);
     findElements([{addedNodes: [mainContainer]}]); // run once on mainContainer
+    return true;
   });
+
   return true;
 };
 
@@ -299,7 +309,7 @@ oninit.push ( () => {
     onTokenReady,
   });
 
-  SettingStorage.on('loaded', (settings) => {
+  SettingStorage.get().then((settings) => {
     const {
       enabled,
       pct,
@@ -312,7 +322,13 @@ oninit.push ( () => {
     updateSelectStyle('miri-furigana-select', furigana_selectable);
   });
 
-  SettingStorage.on('updated', (settings) => {
+  chrome.runtime.onMessage.addListener((message) => {
+    const {event} = message;
+  
+    if (event !== MIRI_EVENTS.SETTING_CHANGED) {
+      return false;
+    }
+    const settings = event.settings;
     if ('enabled' in settings) {
       setRubyVisibility('miri-ruby-visible', settings.enabled);
     }
@@ -335,16 +351,29 @@ oninit.push ( () => {
   hooked = hooked || registerDeckMutationHook();
 
   if (!hooked) {
-    setTimeout( () => {
-      SelectorStorage.on('loaded', () => {
-        hooked = hooked || registerGeneralMutationHook();
+    setTimeout(async () => {
+      hooked = hooked || await registerGeneralMutationHook();
 
-        SelectorStorage.on('updated', () => {
-          if (!hooked) {
-            hooked = registerGeneralMutationHook();
+      if (!hooked) {
+        chrome.runtime.onMessage.addListener((message) => {
+          const {event} = message;
+        
+          if (hooked || event !== MIRI_EVENTS.SELECTOR_ADDED) {
+            return false;
           }
+      
+          const site = message.selector[0];
+          const loc = window.location;
+          const current_site = loc.host;
+      
+          if (current_site !== site) {
+            return false;
+          }
+
+          registerGeneralMutationHook().then( (success) => { hooked = success; } );
+          return true;
         });
-      });
+      }
     }, 250);
   }
 

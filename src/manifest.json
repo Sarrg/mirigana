@@ -37,16 +37,6 @@
     {
       "resources": ["constants.js"],
       "matches": ["<all_urls>"]
-    },
-    {
-      "resources": [
-        "storages.js",
-        "storages/filter-storage.js",
-        "storages/selector-storage.js",
-        "storages/setting-storage.js",
-        "storages/token-storage.js"
-      ],
-      "matches": ["<all_urls>"]
     }
   ],
 
@@ -65,6 +55,7 @@
       "content_scripts/miri.js",
       "content_scripts/mutationhook.js",
       "content_scripts/element-picker.js",
+      "content_scripts/storage-accessor.js",
       "thirdparty/html-element-picker.js"
     ],
     "type": "module"

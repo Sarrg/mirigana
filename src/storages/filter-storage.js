@@ -5,7 +5,8 @@ debug
 
 // eslint-disable-next-line no-unused-vars
 
-import {MIRI_EVENTS, STORAGE_KEYS} from '../constants.js';
+import {MIRI_EVENTS, STORAGE_KEYS} from '/constants.js';
+import { sendToAllTabs } from '/common.js';
 
 export const FilterStorage = {
   filters: null,
@@ -46,27 +47,32 @@ export const FilterStorage = {
     chrome.storage.sync.set(data);
   },
 
-  filter_exists(filter) {
-    return this.filters.has(filter)
+  has(filter) {
+    if (!(filter instanceof Array)) {
+      return this.filters.has(filter);
+    }
+    return filter.map(f => this.filters.has(f)); 
   },
 
   add(filter) {
-    if (!this.filter_exists(filter)) {
+    if (!this.has(filter)) {
       //debug('added: '+filter);
       this.filters.add(filter);
       this.save();
-      this.eventHandlers.updated
-        .forEach((func) => func(MIRI_EVENTS.FILTER_ADDED, filter));
+      sendToAllTabs({event: MIRI_EVENTS.FILTER_ADDED, filter});
+      //this.eventHandlers.updated
+      //  .forEach((func) => func(MIRI_EVENTS.FILTER_ADDED, filter));
     }
   },
 
   delete(filter) {
-    if (this.filter_exists(filter)) {
+    if (this.has(filter)) {
       //debug('deleted: '+filter);
       this.filters.delete(filter);
       this.save();
-      this.eventHandlers.updated
-        .forEach((func) => func(MIRI_EVENTS.FILTER_DELETED, filter));
+      sendToAllTabs({event: MIRI_EVENTS.FILTER_DELETED, filter});
+      //this.eventHandlers.updated
+      //  .forEach((func) => func(MIRI_EVENTS.FILTER_DELETED, filter));
     }
   },
 };

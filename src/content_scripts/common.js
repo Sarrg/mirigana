@@ -10,13 +10,6 @@ const oninit = [];
   var src = chrome.runtime.getURL("constants.js");
   const consts = await import(src);
   window.MIRI_EVENTS = consts.MIRI_EVENTS
-
-  var src = chrome.runtime.getURL("storages.js");
-  const storages = await import(src);
-  window.FilterStorage = storages.FilterStorage;
-  window.SelectorStorage = storages.SelectorStorage;
-  window.SettingStorage = storages.SettingStorage;
-  window.TokenStorage = storages.TokenStorage;
   
   // TODO: release message that background is loaded
   oninit.forEach(func => func());
@@ -175,12 +168,15 @@ const renderKanji = (kana, kanji, context) => {
     (e)=> {
       if (document.getSelection().isCollapsed && e.altKey) {
         const ctx = e.target.getAttribute('ctx')
-        if(FilterStorage.filter_exists(ctx)) {
-          FilterStorage.delete(ctx);
-        }
-        else {
-          FilterStorage.add(ctx);
-        }
+
+        FilterStorage.has(ctx).then( (exists) => {
+          if(exists) {
+            FilterStorage.delete(ctx);
+          }
+          else {
+            FilterStorage.add(ctx);
+          }
+        });
         
         // prevent other actions to be triggered
         e.stopImmediatePropagation();
@@ -269,10 +265,10 @@ const renderRuby = (container, token) => {
         // contains kanji
         const rb = renderKanji(b.r, b.s, b.c);
         textSpan.appendChild(rb);
-        const filter_furigana = FilterStorage.filter_exists(b.c);
-        if (filter_furigana) {
-          rb.querySelector('.furigana').style.display = 'none';
-        }
+        //const filter_furigana = FilterStorage.has(b.c);
+        //if (filter_furigana) {
+        //  rb.querySelector('.furigana').style.display = 'none';
+        //}
       } else {
         //all kana or unparsed kanji
         textSpan.appendChild(renderKana(b.s));
@@ -281,16 +277,46 @@ const renderRuby = (container, token) => {
     });
     textNode.parentNode.replaceChild(textSpan, textNode);
   }
+
+  // TODO: move this, should be triggered when mutations are all handled
+  const contexts = [... new Set(blocks.filter(b => b.c).map(b => b.c ))];
+  FilterStorage.has(contexts).then( (hasFilter) => {
+    for (let [i, c] of contexts.entries()) {
+      if (hasFilter[i]) {
+        const selector_query = `ruby[ctx="${c}"] .furigana`;
+        document.querySelectorAll(selector_query).forEach((rb) => {
+          rb.style.display = 'none';
+        });
+      }
+    }
+  });
 };
 
 
 oninit.push(() => {
   if (isChrome()) {
-    FilterStorage.on('updated', (event, filter) => {
+    chrome.runtime.onMessage.addListener((message) => {
+      const {event} = message;
+
+      if (event !== MIRI_EVENTS.FILTER_ADDED && event !== MIRI_EVENTS.FILTER_DELETED) {
+        return false;
+      }
+      const {filter} = message;
+      const added = event === MIRI_EVENTS.FILTER_ADDED;
       const selector_query = `ruby[ctx="${filter}"] .furigana`;
       document.querySelectorAll(selector_query).forEach((rb) => {
-        rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
+        rb.style.display = added ? 'none' : '';
       });
+
+      return true;
+
     });
+
+    // FilterStorage.on('updated', (event, filter) => {
+    //   const selector_query = `ruby[ctx="${filter}"] .furigana`;
+    //   document.querySelectorAll(selector_query).forEach((rb) => {
+    //     rb.style.display = (event === MIRI_EVENTS.FILTER_ADDED) ? 'none' : '';
+    //   });
+    // });
   }
 });

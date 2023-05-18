@@ -6,7 +6,8 @@ debug
 
 // eslint-disable-next-line no-unused-vars
 
-import {MIRI_EVENTS, STORAGE_KEYS} from '../constants.js';
+import {MIRI_EVENTS, STORAGE_KEYS} from '/constants.js';
+import {sendToAllTabs} from '/common.js';
 
 export const TokenStorage = {
     tokens: new Map(),
@@ -75,7 +76,7 @@ export const TokenStorage = {
       chrome.storage.session.set(data);
     },
   
-    exists(token) {
+    has(token) {
       return this.tokens.has(token)
     },
   
@@ -92,6 +93,15 @@ export const TokenStorage = {
       this.tokens.set(token, count + 1);
       this.sessionTokens.set(token, sessionCount + 1);
       this.save();
+    },
+
+    get(sessionOnly=false) {
+      if (sessionOnly) {
+        return this.sessionTokens;
+      }
+      else {
+        return this.tokens;
+      }
     },
   
     clear(sessionOnly=true) {

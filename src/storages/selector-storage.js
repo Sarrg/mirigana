@@ -6,7 +6,8 @@ debug
 
 // eslint-disable-next-line no-unused-vars
 
-import {MIRI_EVENTS, STORAGE_KEYS} from '../constants.js';
+import {MIRI_EVENTS, STORAGE_KEYS} from '/constants.js';
+import { sendToAllTabs } from '/common.js';
 
 const selectorReplacer = (k, v) => {
   if (k === '') {
@@ -76,12 +77,21 @@ export const SelectorStorage = {
     chrome.storage.sync.set(data);
   },
 
-  has_selector(site, query='') {
-    return this.selectors.has(site) && (query === '' || this.selectors[site]['queries'].has(query));
+  has(site, query='') {
+    return this.selectors.has(site) && 
+      (query === '' || this.selectors.get(site)['queries'].has(query));
+  },
+
+  get(site) {
+    const selector = this.selectors.get(site);
+    if (selector !== undefined) {
+      selector.queries = [... selector.queries];
+    }
+    return selector;
   },
 
   add(selector) {
-    [site, component, query] = selector
+    const [site, component, query] = selector
     if (!this.selectors.has(site)) {
       const [k, v] = createSelector(site, component);
       this.selectors.set(k, v);
@@ -92,14 +102,17 @@ export const SelectorStorage = {
       //debug('added: '+query);
       queries.add(query);
       this.save();
-      this.eventHandlers.updated
-        .forEach((func) => func(MIRI_EVENTS.SELECTOR_ADDED, query));
+      sendToAllTabs({event: MIRI_EVENTS.SELECTOR_ADDED, selector});
+      //this.eventHandlers.updated
+      //  .forEach((func) => func(MIRI_EVENTS.SELECTOR_ADDED, query));
+
+      
     }
   },
 
   delete(selector) {
     [site, query] = selector
-    if (this.has_selector(site, query)) {
+    if (this.has(site, query)) {
       //debug('deleted: '+query);
       const queries = this.selectors.get(site)['queries']
       queries.delete(query);
@@ -109,8 +122,9 @@ export const SelectorStorage = {
       }
 
       this.save();
-      this.eventHandlers.updated
-        .forEach((func) => func(MIRI_EVENTS.SELECTOR_DELETED, query));
+      sendToAllTabs({event: MIRI_EVENTS.SELECTOR_DELETED, selector});
+      //this.eventHandlers.updated
+      //  .forEach((func) => func(MIRI_EVENTS.SELECTOR_DELETED, query));
     }
   },
 };

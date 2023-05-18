@@ -3,20 +3,8 @@ import {kuromoji} from './thirdparty/kuromoji.js';
 import {rebulidToken} from './background/token-rules.js';
 import {retrieveFromCache, persiseToCache} from './background/memory-cache.js';
 import "./storages.js";
-
-const sendToActiveTab = async (event, value) => {
-  let queryOptions = { active: true, lastFocusedWindow: true };
-  // `tab` will either be a `tabs.Tab` instance or `undefined`.
-  let [tab] = await chrome.tabs.query(queryOptions);
-  
-  if (tab !== undefined) {
-    const msg = {
-      event,
-      value,
-    };
-    chrome.tabs.sendMessage(tab.id, msg);
-  }
-}
+import { FilterStorage, SelectorStorage, SettingStorage } from './storages.js';
+import {sendToActiveTab} from './common.js';
 
 function listenTokenParseMessage(callback) {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -164,6 +152,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ info });
   });
 
+  // indicate async callback
+  return true;
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { event } = request;
+  if (event !== MIRI_EVENTS.STORAGE_ACCESS) {
+    // reject other events
+    return false;
+  }
+
+  const storages = {
+    filter: FilterStorage,
+    selector: SelectorStorage,
+    setting: SettingStorage,
+  }
+
+  const {storage, func, params} = request;
+
+  try {
+    const ret = storages[storage][func](...params);
+    sendResponse({success:true, ret});
+  }
+  catch (error) {
+    sendResponse({success: false, error: `${error}`});
+  }
   // indicate async callback
   return true;
 });

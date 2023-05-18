@@ -6,7 +6,8 @@ debug
 
 // eslint-disable-next-line no-unused-vars
 
-import {MIRI_EVENTS, STORAGE_KEYS, SETTING_DEFAULTS} from '../constants.js';
+import {MIRI_EVENTS, STORAGE_KEYS, SETTING_DEFAULTS} from '/constants.js';
+import { sendToAllTabs } from '/common.js';
 
 export const SettingStorage = {
   settings: null,
@@ -58,13 +59,17 @@ export const SettingStorage = {
     // TODO:
   },
 
-  get(key) {
+  get(key=null) {
+    if (key == null) {
+      return this.settings;
+    }
     return this.settings[key];
   },
 
   set(setting) {
     Object.assign(this.settings, setting);
 
+    sendToAllTabs({event: MIRI_EVENTS.SETTING_CHANGED, setting});
     this.eventHandlers.updated
       .forEach((func) => func(this.settings));
 
