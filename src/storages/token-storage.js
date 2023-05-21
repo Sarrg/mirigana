@@ -13,6 +13,8 @@ export const TokenStorage = {
     tokens: new Map(),
     sessionTokens: new Map(),
     loaded: false,
+    changed: false,
+    saveDelay: 10000,
   
     eventHandlers: {
       loaded: [],
@@ -31,24 +33,6 @@ export const TokenStorage = {
     },
   
     load() {
-
-      // const onLoad = (response) => {
-      //   //debug('responsed: LOAD_FILTERS');
-      //   this.loaded = true;
-      //   this.tokens = new Map(response.tokens);
-      //   this.sessionTokens = new Map(response.tokens);
-
-      //   this.eventHandlers.loaded
-      //     .forEach((func) => func(this.response));
-      // };
-      // onLoad.bind(this);
-      // chrome.runtime.sendMessage(
-      //   {
-      //     event: MIRI_EVENTS.LOAD_TOKENS,
-      //   },
-      //   onLoad,
-      // );
-
       if (!this.loaded) {
         chrome.storage.local.get(STORAGE_KEYS.TOKENS_KEY, (result = {}) => {
           this.tokens = new Map(result[STORAGE_KEYS.TOKENS_KEY]);
@@ -74,6 +58,7 @@ export const TokenStorage = {
         [STORAGE_KEYS.TOKENS_KEY]: [...this.sessionTokens]
       };
       chrome.storage.session.set(data);
+      this.changed = false;
     },
   
     has(token) {
@@ -82,7 +67,7 @@ export const TokenStorage = {
   
     add(token) {
       var count = 0;
-      if (this.exists(token)) {
+      if (this.has(token)) {
         count = this.tokens.get(token);
       }
       var sessionCount = 0;
@@ -92,7 +77,11 @@ export const TokenStorage = {
 
       this.tokens.set(token, count + 1);
       this.sessionTokens.set(token, sessionCount + 1);
-      this.save();
+
+      if (!this.changed) {
+        setTimeout(() => { this.save()}, this.saveDelay);
+      }
+      this.changed = true;
     },
 
     get(sessionOnly=false) {
@@ -106,11 +95,10 @@ export const TokenStorage = {
   
     clear(sessionOnly=true) {
       this.sessionTokens = new Map();
-      
-      if (!sessionOnly)
+      if (!sessionOnly) {
         this.tokens = new Map();
-      //this.eventHandlers.updated
-      //  .forEach((func) => func(MIRI_EVENTS.FILTER_DELETED, filter));
+      }
+      this.save();
     },
   };
   

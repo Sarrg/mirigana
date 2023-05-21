@@ -3,7 +3,7 @@ import {kuromoji} from './thirdparty/kuromoji.js';
 import {rebulidToken} from './background/token-rules.js';
 import {retrieveFromCache, persiseToCache} from './background/memory-cache.js';
 import "./storages.js";
-import { FilterStorage, SelectorStorage, SettingStorage } from './storages.js';
+import { FilterStorage, SelectorStorage, SettingStorage, TokenStorage } from './storages.js';
 import {sendToActiveTab} from './common.js';
 
 function listenTokenParseMessage(callback) {
@@ -28,6 +28,9 @@ chrome.storage.local.get((result = {}) => {
         const results = tweets.map((t) => {
           const token = tokenizer.tokenize(t);
           const ret = rebulidToken(token);
+          ret.forEach((tok) => {
+            TokenStorage.add(tok.s);
+          });
           return ret;
         });
         sendResponse(results);
@@ -63,6 +66,7 @@ chrome.storage.local.get((result = {}) => {
             const k = tweets[idx];
             const v = tokens.shift();
             persiseToCache(k, v);
+            TokenStorage.add(k);
 
             return (v);
           });
@@ -167,6 +171,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     filter: FilterStorage,
     selector: SelectorStorage,
     setting: SettingStorage,
+    token: TokenStorage,
   }
 
   const {storage, func, params} = request;
