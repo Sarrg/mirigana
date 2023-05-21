@@ -1,12 +1,8 @@
-/* global
-PARSE_ENGINES
-CURRENT_PARSE_ENGINE_KEY
-CURRENT_PARSE_ENGINE_DEFAULT
-*/
+import {PARSE_ENGINES, STORAGE_KEYS, SETTING_DEFAULTS} from '/constants.js';
 
 const optionsState = {
-  [CURRENT_PARSE_ENGINE_KEY]: CURRENT_PARSE_ENGINE_DEFAULT,
-  engineKeyOrigin: CURRENT_PARSE_ENGINE_DEFAULT,
+  [STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY]: SETTING_DEFAULTS.CURRENT_PARSE_ENGINE_DEFAULT,
+  engineKeyOrigin: SETTING_DEFAULTS.CURRENT_PARSE_ENGINE_DEFAULT,
 };
 
 function localizeElement(ele) {
@@ -70,10 +66,10 @@ localizeElement(exportSettingsBtn);
 
 optionApplyBtn.addEventListener('click', () => {
   chrome.storage.local.set({
-    [CURRENT_PARSE_ENGINE_KEY]: optionsState[CURRENT_PARSE_ENGINE_KEY],
+    [STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY]: optionsState[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY],
   }, () => {
     chrome.runtime.reload();
-    optionsState.engineKeyOrigin = optionsState[CURRENT_PARSE_ENGINE_KEY];
+    optionsState.engineKeyOrigin = optionsState[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY];
     optionApplyBtn.setAttribute('disabled', 'disabled');
     window.close();
   });
@@ -131,7 +127,7 @@ function composeEngineOption(currentEngine) {
         allBlocks.forEach((ele) => ele.classList.remove('active'));
 
         if (optionsState.engineKeyOrigin !== engine.key) {
-          optionsState[CURRENT_PARSE_ENGINE_KEY] = engine.key;
+          optionsState[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY] = engine.key;
           optionApplyBtn.removeAttribute('disabled');
         } else {
           optionApplyBtn.setAttribute('disabled', 'disabled');
@@ -158,17 +154,17 @@ function composeEngineOption(currentEngine) {
 }
 
 chrome.storage.local.get((result = {}) => {
-  let currentEngine = result[CURRENT_PARSE_ENGINE_KEY];
+  let currentEngine = result[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY];
 
   if (!currentEngine) {
     // write the default value immedately
-    currentEngine = optionsState[CURRENT_PARSE_ENGINE_KEY];
+    currentEngine = optionsState[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY];
     chrome.storage.local.set({
-      [CURRENT_PARSE_ENGINE_KEY]: currentEngine,
+      [STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY]: currentEngine,
     });
   }
 
-  optionsState[CURRENT_PARSE_ENGINE_KEY] = currentEngine;
+  optionsState[STORAGE_KEYS.CURRENT_PARSE_ENGINE_KEY] = currentEngine;
   optionsState.engineKeyOrigin = currentEngine;
   composeEngineOption(currentEngine);
 });

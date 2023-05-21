@@ -1,15 +1,4 @@
-/* global
-EXTENSION_ENABLED_KEY
-EXTENSION_ENABLED_DEFAULT
-FURIGANA_SIZE_PERCENTAGE_KEY
-FURIGANA_SIZE_PERCENTAGE_DEFAULT
-FURIGANA_COLOR_KEY
-FURIGANA_COLOR_DEFAULT
-FURIGANA_SELECTABLE_KEY
-FURIGANA_SELECTABLE_DEFAULT
-MIRI_EVENTS
-FURIGANA_COLORS
-*/
+import {MIRI_EVENTS, FURIGANA_COLORS, STORAGE_KEYS, SETTING_DEFAULTS} from '/constants.js';
 
 function fillText(id, textOrKey, useKey) {
   const ele = document.querySelector(id);
@@ -63,7 +52,7 @@ function prepareToggleButton(initValue) {
 
     // update to storage
     const saveData = {
-      [EXTENSION_ENABLED_KEY]: enabled,
+      [STORAGE_KEYS.EXTENSION_ENABLED_KEY]: enabled,
     };
     chrome.storage.sync.set(saveData);
 
@@ -102,7 +91,7 @@ function prepareColorSwitcher(initValue) {
 
     // update to storage
     const saveData = {
-      [FURIGANA_COLOR_KEY]: color,
+      [STORAGE_KEYS.FURIGANA_COLOR_KEY]: color,
     };
     chrome.storage.sync.set(saveData);
 
@@ -120,7 +109,7 @@ function prepareKanaSizeRange(initValue) {
 
     // update to storage
     const saveData = {
-      [FURIGANA_SIZE_PERCENTAGE_KEY]: pct,
+      [STORAGE_KEYS.FURIGANA_SIZE_PERCENTAGE_KEY]: pct,
     };
     chrome.storage.sync.set(saveData);
 
@@ -136,7 +125,7 @@ function prepareKanaSelection(initValue) {
     const furigana_selectable = e.target.checked;
     // update to storage
     const saveData = {
-      [FURIGANA_SELECTABLE_KEY]: furigana_selectable,
+      [STORAGE_KEYS.FURIGANA_SELECTABLE_KEY]: furigana_selectable,
     };
     chrome.storage.sync.set(saveData);
 
@@ -153,21 +142,21 @@ function nullish(value, defaultValue) {
 
 // load from storage
 chrome.storage.sync.get([
-  EXTENSION_ENABLED_KEY,
-  FURIGANA_SIZE_PERCENTAGE_KEY,
-  FURIGANA_SELECTABLE_KEY,
-  FURIGANA_COLOR_KEY,
+  STORAGE_KEYS.EXTENSION_ENABLED_KEY,
+  STORAGE_KEYS.FURIGANA_SIZE_PERCENTAGE_KEY,
+  STORAGE_KEYS.FURIGANA_SELECTABLE_KEY,
+  STORAGE_KEYS.FURIGANA_COLOR_KEY,
 ], (result = {}) => {
-  const disabled = nullish(result[EXTENSION_ENABLED_KEY], EXTENSION_ENABLED_DEFAULT);
+  const disabled = nullish(result[STORAGE_KEYS.EXTENSION_ENABLED_KEY], SETTING_DEFAULTS.EXTENSION_ENABLED_DEFAULT);
   prepareToggleButton(disabled);
 
-  const pct = nullish(result[FURIGANA_SIZE_PERCENTAGE_KEY], FURIGANA_SIZE_PERCENTAGE_DEFAULT);
+  const pct = nullish(result[STORAGE_KEYS.FURIGANA_SIZE_PERCENTAGE_KEY], SETTING_DEFAULTS.FURIGANA_SIZE_PERCENTAGE_DEFAULT);
   prepareKanaSizeRange(pct);
 
-  const color = nullish(result[FURIGANA_COLOR_KEY], FURIGANA_COLOR_DEFAULT);
+  const color = nullish(result[STORAGE_KEYS.FURIGANA_COLOR_KEY], SETTING_DEFAULTS.FURIGANA_COLOR_DEFAULT);
   prepareColorSwitcher(color);
 
-  const furigana_selectable = nullish(result[FURIGANA_SELECTABLE_KEY], FURIGANA_SELECTABLE_DEFAULT);
+  const furigana_selectable = nullish(result[STORAGE_KEYS.FURIGANA_SELECTABLE_KEY], SETTING_DEFAULTS.FURIGANA_SELECTABLE_DEFAULT);
   prepareKanaSelection(furigana_selectable);
 
   fillText('.kana-size .literal', 'ui_furigana_size', true);
